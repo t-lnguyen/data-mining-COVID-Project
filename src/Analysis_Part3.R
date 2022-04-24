@@ -441,29 +441,31 @@ hmap(cm, margins = c(10, 10))
 dev.off()
 
 ###### Creating Qualifier Class Variables ######
+###### Creating a "bad" factor which represents high deaths per case ######
+###### Creating a "bad" factor which represents high case rate ######
 ###### Creating a "bad" factor which represents high fatality rate #####
 ## Note: The "bad" value was chosen through trial and error
 ### Note: 35 is a pretty large value considering our column - keep in mind
 ### by this date (2022-04-09) in the pandemic, countless lives are lost already
-covid_cases_newest <- covid_cases_newest %>% mutate(bad = as.factor(deaths_per_10000 > 35))
+covid_cases_newest <- covid_cases_newest %>% mutate(bad_death_count = as.factor(deaths_per_10000 > 35))
 ## Determine a more-or-less even split to avoid class imbalance
-covid_cases_newest %>% pull(bad) %>% table()
+covid_cases_newest %>% pull(bad_death_count) %>% table()
 ## We determine further States with interesting percentages of "bad" ##
 ###### If we can perhaps create a gradient map of this, we can visualize the US's highest fatality centers ######
 covid_cases_newest_US_select <- covid_cases_newest %>% group_by(State) %>% 
-  summarize(bad_pct = sum(bad == TRUE)/n()) %>%
-  arrange(desc(bad_pct))
+  summarize(bad_predicted_death_count_pct = sum(bad_death_count == TRUE)/n()) %>%
+  arrange(desc(bad_predicted_death_count_pct))
 
 ###### Split our data into test/training sets ######
 ## Training Set ##
 covid_cases_newest %>% filter(State %in% c("TX", "CA", "FL", "NY"))
 covid_cases_newest_training <- covid_cases_newest %>% filter(State %in% c("TX", "CA", "FL", "NY"))
-covid_cases_newest_training %>% pull(bad) %>% table()
+covid_cases_newest_training %>% pull(bad_death_count) %>% table()
 ## Test Set ##
 covid_cases_newest_test <- covid_cases_newest %>% filter(!(State %in% c("TX", "CA", "FL", "NY")))
-covid_cases_newest_test %>% pull(bad) %>% table()
+covid_cases_newest_test %>% pull(bad_death_count) %>% table()
 
-###### Plot map for test data ######
+###### Plot map for training data ######
 counties <- as_tibble(map_data("county"))
 counties <- counties %>% 
   rename(c(county = subregion, state = region)) %>%
@@ -476,23 +478,23 @@ counties_all <- counties %>% left_join(covid_cases_newest_training %>%
                                 str_replace('\\s+county\\s*$', '')))
 ## Not sure why this differs from starter code ##
 ggplot(counties_all, aes(long, lat)) + 
-    geom_polygon(aes(group = group, fill = bad), color = "black", size = 0.1) + 
+    geom_polygon(aes(group = group, fill = bad_death_count), color = "black", size = 0.1) + 
     coord_quickmap() + scale_fill_manual(values = c('TRUE' = 'red', 'FALSE' = 'grey'))
 
 ###### Checking variable importance ######
-covid_cases_newest_training %>%  chi.squared(bad ~ ., data = .) %>% 
+covid_cases_newest_training %>%  chi.squared(bad_death_count ~ ., data = .) %>% 
   arrange(desc(attr_importance)) %>% head()
 ## Need to remove variable used to create class variable 
 ## also remove other variables
 covid_cases_newest_training <- covid_cases_newest_training %>% select(-c(deaths_per_10000))
 covid_cases_newest_training <- covid_cases_newest_training %>% select(-c(`Geographic ID`))
 covid_cases_newest_training <- covid_cases_newest_training %>% select(-death_per_case, -cases_per_10000)
-covid_cases_newest_training %>%  chi.squared(bad ~ ., data = .) %>% 
+covid_cases_newest_training %>%  chi.squared(bad_death_count ~ ., data = .) %>% 
   arrange(desc(attr_importance)) %>% head(10)
 ###### Building a model ######
 ## Using Random Forest Method ##
 fit <- covid_cases_newest_training %>%
-  train(bad ~ . - County - State,
+  train(bad_death_count ~ . - County - State,
         data = . ,
         #method = "rpart",
         method = "rf",
@@ -507,7 +509,7 @@ varImp(fit)
 
 ###### Apply model to other states in US ######
 covid_cases_newest_test <- covid_cases_newest_test %>% na.omit
-covid_cases_newest_test$bad_predicted <- predict(fit, covid_cases_newest_test)
+covid_cases_newest_test$bad_predicted_death_count <- predict(fit, covid_cases_newest_test)
 
 counties_test <- counties %>% left_join(covid_cases_newest_test %>% 
                                           mutate(county = County %>% str_to_lower() %>% 
@@ -517,10 +519,10 @@ ggplot(counties_test, aes(long, lat)) +
   geom_polygon(aes(group = group, fill = bad), color = "black", size = 0.1) + 
   coord_quickmap() + 
   scale_fill_manual(values = c('TRUE' = 'red', 'FALSE' = 'grey'))
-## Predictions ##
+## Predictions by plotting with our test data ##
 ggplot(counties_test, aes(long, lat)) + 
-  geom_polygon(aes(group = group, fill = bad_predicted), color = "black", size = 0.1) + 
+  geom_polygon(aes(group = group, fill = bad_predicted_death_count), color = "black", size = 0.1) + 
   coord_quickmap() + 
   scale_fill_manual(values = c('TRUE' = 'red', 'FALSE' = 'grey'))
 ## Confusion Matrix ##
-confusionMatrix(data = covid_cases_newest_test$bad_predicted, ref = covid_cases_newest_test$bad)
+confusionMatrix(data = covid_cases_newest_test$bad_predicted_death_count, ref = covid_cases_newest_test$bad)
