@@ -10,8 +10,8 @@ library(FSelector)
 library(caret)
 
 ###### Data tibbles ######
-#covid_cases_newest <- as_tibble(read_csv("~/Documents/Development/GradSchool/data-mining-COVID-Project/data/covid_census_newest.csv"))
-covid_cases_newest <- as_tibble(read_csv("D:/dev/GradSchool/data-mining-COVID-Project/data/covid_census_newest.csv"))
+covid_cases_newest <- as_tibble(read_csv("~/Documents/Development/GradSchool/data-mining-COVID-Project/data/covid_census_newest.csv"))
+#covid_cases_newest <- as_tibble(read_csv("D:/dev/GradSchool/data-mining-COVID-Project/data/covid_census_newest.csv"))
 ###### Light cleaning  #######
 covid_cases_newest <- covid_cases_newest %>% mutate_if(is.character, factor)
 covid_cases_newest <- covid_cases_newest %>% filter(confirmed_cases > 0)
@@ -21,7 +21,7 @@ covid_cases_newest <- covid_cases_newest %>% arrange(desc(confirmed_cases))
 covid_cases_newest <- covid_cases_newest %>% mutate(
   cases_per_10000 = confirmed_cases/total_pop * 10000, 
   deaths_per_10000 = deaths/total_pop * 10000, 
-  death_per_case = deaths/confirmed_cases)
+  death_per_case = deaths_per_10000/cases_per_10000)
 
 ###### Selecting our features ######
 covid_cases_newest <- covid_cases_newest %>% select(-`county_fips_code`)
@@ -441,8 +441,44 @@ hmap(cm, margins = c(10, 10))
 dev.off()
 
 ###### Creating Qualifier Class Variables ######
-###### Creating a "bad" factor which represents high deaths per case ######
 ###### Creating a "bad" factor which represents high case rate ######
+covid_cases_newest <- covid_cases_newest %>% mutate(bad_case_count = as.factor(cases_per_10000 > 2400))
+## Determine a more-or-less even split to avoid class imbalance
+covid_cases_newest %>% pull(bad_case_count) %>% table()
+## We determine further States with interesting percentages of "bad" ##
+covid_cases_newest_US_select <- covid_cases_newest %>% group_by(State) %>% 
+  summarize(bad_predicted_case_count_pct = sum(bad_case_count == TRUE)/n()) %>%
+  arrange(desc(bad_predicted_case_count_pct))
+###### Split our data into test/training sets: Bad Case Count ######
+## Training Set ##
+covid_cases_newest %>% filter(State %in% c("TX", "CA", "FL", "NY"))
+covid_cases_newest_training <- covid_cases_newest %>% filter(State %in% c("TX", "CA", "FL", "NY"))
+covid_cases_newest_training %>% pull(bad_case_count) %>% table()
+## Test Set ##
+covid_cases_newest_test <- covid_cases_newest %>% filter(!(State %in% c("TX", "CA", "FL", "NY")))
+covid_cases_newest_test %>% pull(bad_case_count) %>% table()
+
+###### Plot map for training data ######
+counties <- as_tibble(map_data("county"))
+counties <- counties %>% 
+  rename(c(county = subregion, state = region)) %>%
+  mutate(state = state.abb[match(state, tolower(state.name))]) %>%
+  select(state, county, long, lat, group)
+counties  
+
+counties_all <- counties %>% left_join(covid_cases_newest_training %>% 
+                                         mutate(county = County %>% str_to_lower() %>% 
+                                                  str_replace('\\s+county\\s*$', '')))
+## Not sure why this differs from starter code ##
+ggplot(counties_all, aes(long, lat)) + 
+  geom_polygon(aes(group = group, fill = bad_case_count), color = "black", size = 0.1) + 
+  coord_quickmap() + scale_fill_manual(values = c('TRUE' = 'red', 'FALSE' = 'grey'))
+
+###### Checking variable importance ######
+covid_cases_newest_training %>%  chi.squared(bad_case_count ~ ., data = .) %>% 
+  arrange(desc(attr_importance)) %>% head()
+
+
 ###### Creating a "bad" factor which represents high fatality rate #####
 ## Note: The "bad" value was chosen through trial and error
 ### Note: 35 is a pretty large value considering our column - keep in mind
