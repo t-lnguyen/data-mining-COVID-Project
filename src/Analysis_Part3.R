@@ -21,7 +21,7 @@ covid_cases_newest <- covid_cases_newest %>% arrange(desc(confirmed_cases))
 covid_cases_newest <- covid_cases_newest %>% mutate(
   cases_per_10000 = confirmed_cases/total_pop * 10000, 
   deaths_per_10000 = deaths/total_pop * 10000, 
-  death_per_case = deaths_per_10000/cases_per_10000)
+  death_per_case = deaths_per_10000/cases_per_10000 * 10000)
 
 ###### Selecting our features ######
 covid_cases_newest <- covid_cases_newest %>% select(-`county_fips_code`)
