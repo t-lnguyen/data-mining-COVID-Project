@@ -10,8 +10,8 @@ library(FSelector)
 library(caret)
 
 ###### Data tibbles ######
-#covid_cases_newest <- as_tibble(read_csv("~/Documents/Development/GradSchool/data-mining-COVID-Project/data/covid_census_newest.csv"))
-covid_cases_newest <- as_tibble(read_csv("D:/dev/GradSchool/data-mining-COVID-Project/data/covid_census_newest.csv"))
+covid_cases_newest <- as_tibble(read_csv("~/Documents/Development/GradSchool/data-mining-COVID-Project/data/covid_census_newest.csv"))
+#covid_cases_newest <- as_tibble(read_csv("D:/dev/GradSchool/data-mining-COVID-Project/data/covid_census_newest.csv"))
 ###### Light cleaning  #######
 covid_cases_newest <- covid_cases_newest %>% mutate_if(is.character, factor)
 covid_cases_newest <- covid_cases_newest %>% filter(confirmed_cases > 0)
@@ -21,7 +21,7 @@ covid_cases_newest <- covid_cases_newest %>% arrange(desc(confirmed_cases))
 covid_cases_newest <- covid_cases_newest %>% mutate(
   cases_per_10000 = confirmed_cases/total_pop * 10000, 
   deaths_per_10000 = deaths/total_pop * 10000, 
-  death_per_case = deaths_per_10000/cases_per_10000 * 10000)
+  death_per_case = (deaths_per_10000/cases_per_10000) * 10000)
 
 ###### Selecting our features ######
 covid_cases_newest <- covid_cases_newest %>% select(-`county_fips_code`)
@@ -57,7 +57,7 @@ covid_cases_newest <- rename(covid_cases_newest, `Vacant Housing Units` = `vacan
 covid_cases_newest <- rename(covid_cases_newest, `Vacant Housing Units For Rent` = `vacant_housing_units_for_rent`)
 covid_cases_newest <- rename(covid_cases_newest, `Vacant Housing Units For Sale` = `vacant_housing_units_for_sale`)
 covid_cases_newest <- rename(covid_cases_newest, `Median Rent` = `median_rent`)
-covid_cases_newest <- rename(covid_cases_newest, `% Income Spent on Rent` = `percent_income_spent_on_rent`)
+covid_cases_newest <- rename(covid_cases_newest, `Percent Income Spent on Rent` = `percent_income_spent_on_rent`)
 covid_cases_newest <- rename(covid_cases_newest, `Owner Occupied Housing Units` = `owner_occupied_housing_units`)
 covid_cases_newest <- rename(covid_cases_newest, `Million Dollar Houses` = `million_dollar_housing_units`)
 covid_cases_newest <- rename(covid_cases_newest, `Commuters 16+` = `commuters_16_over`)
@@ -90,117 +90,6 @@ covid_cases_newest <- rename(covid_cases_newest, `Population Not In Labor Force`
 covid_cases_newest <- rename(covid_cases_newest, `Population In Labor Force` = `pop_in_labor_force`)
 covid_cases_newest <- rename(covid_cases_newest, `GINI Index` = `gini_index`)
 covid_cases_newest <- rename(covid_cases_newest, `Households Using Public Assistance or Food Stamps` = `households_public_asst_or_food_stamps`)
-
-###### Removing features ######
-covid_cases_newest <- covid_cases_newest %>% select(-median_year_structure_built)
-covid_cases_newest <- covid_cases_newest %>% select(-rent_burden_not_computed)
-covid_cases_newest <- covid_cases_newest %>% select(-renter_occupied_housing_units_paying_cash_median_gross_rent)
-covid_cases_newest <- covid_cases_newest %>% select(-rent_under_10_percent)
-covid_cases_newest <- covid_cases_newest %>% select(-rent_10_to_15_percent)
-covid_cases_newest <- covid_cases_newest %>% select(-rent_15_to_20_percent)
-covid_cases_newest <- covid_cases_newest %>% select(-rent_20_to_25_percent)
-covid_cases_newest <- covid_cases_newest %>% select(-rent_25_to_30_percent)
-covid_cases_newest <- covid_cases_newest %>% select(-rent_30_to_35_percent)
-covid_cases_newest <- covid_cases_newest %>% select(-rent_35_to_40_percent)
-covid_cases_newest <- covid_cases_newest %>% select(-rent_40_to_50_percent)
-covid_cases_newest <- covid_cases_newest %>% select(-rent_over_50_percent)
-covid_cases_newest <- covid_cases_newest %>% select(-pop_divorced)
-covid_cases_newest <- covid_cases_newest %>% select(-pop_widowed)
-covid_cases_newest <- covid_cases_newest %>% select(-pop_separated)
-covid_cases_newest <- covid_cases_newest %>% select(-do_date)
-covid_cases_newest <- covid_cases_newest %>% select(-no_cars)
-covid_cases_newest <- covid_cases_newest %>% select(-pop_now_married)
-covid_cases_newest <- covid_cases_newest %>% select(-pop_never_married)
-covid_cases_newest <- covid_cases_newest %>% select(-pop_15_and_over)
-covid_cases_newest <- covid_cases_newest %>% select(-pop_16_over)
-covid_cases_newest <- covid_cases_newest %>% select(-pop_5_years_over)
-covid_cases_newest <- covid_cases_newest %>% select(-pop_25_64)
-covid_cases_newest <- covid_cases_newest %>% select(-pop_25_years_over)
-covid_cases_newest <- covid_cases_newest %>% select(-population_1_year_and_over)
-covid_cases_newest <- covid_cases_newest %>% select(-population_3_years_over)
-covid_cases_newest <- covid_cases_newest %>% select(-speak_only_english_at_home)
-covid_cases_newest <- covid_cases_newest %>% select(-speak_spanish_at_home_low_english)
-covid_cases_newest <- covid_cases_newest %>% select(-speak_spanish_at_home)
-covid_cases_newest <- covid_cases_newest %>% select(-hispanic_any_race)
-covid_cases_newest <- covid_cases_newest %>% select(-workers_16_and_over)
-covid_cases_newest <- covid_cases_newest %>% select(-walked_to_work)
-covid_cases_newest <- covid_cases_newest %>% select(-male_male_households)
-covid_cases_newest <- covid_cases_newest %>% select(-male_45_64_associates_degree)
-covid_cases_newest <- covid_cases_newest %>% select(-male_45_64_bachelors_degree)
-covid_cases_newest <- covid_cases_newest %>% select(-male_45_64_graduate_degree)
-covid_cases_newest <- covid_cases_newest %>% select(-female_female_households)
-covid_cases_newest <- covid_cases_newest %>% select(-male_45_to_64)
-covid_cases_newest <- covid_cases_newest %>% select(-mortgaged_housing_units)
-covid_cases_newest <- covid_cases_newest %>% select(-aggregate_travel_time_to_work)
-covid_cases_newest <- covid_cases_newest %>% select(-families_with_young_children)
-covid_cases_newest <- covid_cases_newest %>% select(-two_parent_families_with_young_children)
-covid_cases_newest <- covid_cases_newest %>% select(-two_parents_in_labor_force_families_with_young_children)
-covid_cases_newest <- covid_cases_newest %>% select(-two_parents_father_in_labor_force_families_with_young_children)
-covid_cases_newest <- covid_cases_newest %>% select(-two_parents_mother_in_labor_force_families_with_young_children)
-covid_cases_newest <- covid_cases_newest %>% select(-two_parents_not_in_labor_force_families_with_young_children)
-covid_cases_newest <- covid_cases_newest %>% select(-one_parent_families_with_young_children)
-covid_cases_newest <- covid_cases_newest %>% select(-father_one_parent_families_with_young_children)
-covid_cases_newest <- covid_cases_newest %>% select(-father_in_labor_force_one_parent_families_with_young_children)
-covid_cases_newest <- covid_cases_newest %>% select(-owner_occupied_housing_units_lower_value_quartile)
-covid_cases_newest <- covid_cases_newest %>% select(-owner_occupied_housing_units_median_value)
-covid_cases_newest <- covid_cases_newest %>% select(-owner_occupied_housing_units_upper_value_quartile)
-covid_cases_newest <- covid_cases_newest %>% select(-married_households)
-covid_cases_newest <- covid_cases_newest %>% select(-occupied_housing_units)
-covid_cases_newest <- covid_cases_newest %>% select(-housing_units_renter_occupied)
-covid_cases_newest <- covid_cases_newest %>% select(-dwellings_1_units_detached)
-covid_cases_newest <- covid_cases_newest %>% select(-dwellings_1_units_attached)
-covid_cases_newest <- covid_cases_newest %>% select(-dwellings_2_units)
-covid_cases_newest <- covid_cases_newest %>% select(-dwellings_3_to_4_units)
-covid_cases_newest <- covid_cases_newest %>% select(-dwellings_5_to_9_units)
-covid_cases_newest <- covid_cases_newest %>% select(-dwellings_10_to_19_units)
-covid_cases_newest <- covid_cases_newest %>% select(-dwellings_20_to_49_units)
-covid_cases_newest <- covid_cases_newest %>% select(-dwellings_50_or_more_units)
-covid_cases_newest <- covid_cases_newest %>% select(-mobile_homes)
-covid_cases_newest <- covid_cases_newest %>% select(-housing_built_2005_or_later)
-covid_cases_newest <- covid_cases_newest %>% select(-housing_built_2000_to_2004)
-covid_cases_newest <- covid_cases_newest %>% select(-housing_built_1939_or_earlier)
-covid_cases_newest <- covid_cases_newest %>% select(-white_including_hispanic)
-covid_cases_newest <- covid_cases_newest %>% select(-black_including_hispanic)
-covid_cases_newest <- covid_cases_newest %>% select(-asian_including_hispanic)
-covid_cases_newest <- covid_cases_newest %>% select(-amerindian_including_hispanic)
-covid_cases_newest <- covid_cases_newest %>% select(-commuters_by_carpool)
-covid_cases_newest <- covid_cases_newest %>% select(-households_retirement_income)
-covid_cases_newest <- covid_cases_newest %>% select(-armed_forces)
-covid_cases_newest <- covid_cases_newest %>% select(-civilian_labor_force)
-covid_cases_newest <- covid_cases_newest %>% select(-asian_male_45_54)
-covid_cases_newest <- covid_cases_newest %>% select(-asian_male_55_64)
-covid_cases_newest <- covid_cases_newest %>% select(-black_male_45_54)
-covid_cases_newest <- covid_cases_newest %>% select(-black_male_55_64)
-covid_cases_newest <- covid_cases_newest %>% select(-hispanic_male_45_54)
-covid_cases_newest <- covid_cases_newest %>% select(-hispanic_male_55_64)
-covid_cases_newest <- covid_cases_newest %>% select(-white_male_45_54)
-covid_cases_newest <- covid_cases_newest %>% select(-white_male_55_64)
-covid_cases_newest <- covid_cases_newest %>% select(-bachelors_degree_or_higher_25_64)
-covid_cases_newest <- covid_cases_newest %>% select(-children_in_single_female_hh)
-covid_cases_newest <- covid_cases_newest %>% select(-children)
-covid_cases_newest <- covid_cases_newest %>% select(-different_house_year_ago_different_city)
-covid_cases_newest <- covid_cases_newest %>% select(-different_house_year_ago_same_city)
-covid_cases_newest <- covid_cases_newest %>% select(-male_45_64_less_than_9_grade)
-covid_cases_newest <- covid_cases_newest %>% select(-male_45_64_grade_9_12)
-covid_cases_newest <- covid_cases_newest %>% select(-male_45_64_high_school)
-covid_cases_newest <- covid_cases_newest %>% select(-male_45_64_some_college)
-covid_cases_newest <- covid_cases_newest %>% select(-in_grades_1_to_4)
-covid_cases_newest <- covid_cases_newest %>% select(-in_grades_5_to_8)
-covid_cases_newest <- covid_cases_newest %>% select(-in_grades_9_to_12)
-covid_cases_newest <- covid_cases_newest %>% select(-in_school)
-covid_cases_newest <- covid_cases_newest %>% select(-group_quarters)
-covid_cases_newest <- covid_cases_newest %>% select(-management_business_sci_arts_employed)
-covid_cases_newest <- covid_cases_newest %>% select(-bachelors_degree_2)
-covid_cases_newest <- covid_cases_newest %>% select(-occupation_management_arts)
-covid_cases_newest <- covid_cases_newest %>% select(-occupation_natural_resources_construction_maintenance)
-covid_cases_newest <- covid_cases_newest %>% select(-occupation_production_transportation_material)
-covid_cases_newest <- covid_cases_newest %>% select(-occupation_sales_office)
-covid_cases_newest <- covid_cases_newest %>% select(-occupation_services)
-covid_cases_newest <- covid_cases_newest %>% select(-sales_office_employed)
-covid_cases_newest <- covid_cases_newest %>% select(-one_year_more_college)
-covid_cases_newest <- covid_cases_newest %>% select(-in_undergrad_college)
-covid_cases_newest <- covid_cases_newest %>% select(-less_one_year_college)
-covid_cases_newest <- covid_cases_newest %>% select(-some_college_and_associates_degree)
 
 ###### Grouping Education Level ######
 ## Higher Education(associates, bachelors, masters)(includes partial)
@@ -391,6 +280,7 @@ covid_cases_newest <- covid_cases_newest %>%
          `Income Between $20,000 and $24,999` = `Income Between $20,000 and $24,999` / `Population`,
          `Income Between $25,000 and $29,999` = `Income Between $25,000 and $29,999` / `Population`,
          `Income Between $30,000 and $34,999` = `Income Between $30,000 and $34,999` / `Population`,
+         `Income Between $35,000 and $39,999` = `Income Between $35,000 and $39,999` / `Population`,
          `Income Between $40,000 and $44,999` = `Income Between $40,000 and $44,999` / `Population`,
          `Income Between $45,000 and $49,999` = `Income Between $45,000 and $49,999` / `Population`,
          `Income Between $50,000 and $59,999` = `Income Between $50,000 and $59,999` / `Population`,
@@ -427,8 +317,129 @@ covid_cases_newest <- covid_cases_newest %>%
          `Male Ages 65-85+` = `Male Ages 65-85+` / `Population`,
          `Female Ages 0-17` = `Female Ages 0-17` / `Population`,
          `Female Ages 18-64` = `Female Ages 18-64` / `Population`,
-         `Female Ages 65-85+` = `Female Ages 65-85+` / `Population`
+         `Female Ages 65-85+` = `Female Ages 65-85+` / `Population`,
+         `Median Age` = `Median Age` / `Population`,
+         `Median Income` = `Median Income` / `Population`,
+         `Percent Income Spent on Rent` = `Percent Income Spent on Rent` / `Population`,
+         `Households Using Public Assistance or Food Stamps` = `Households Using Public Assistance or Food Stamps` / `Population`
          )
+###### Removing features ######
+covid_cases_newest <- covid_cases_newest %>% select(-median_year_structure_built)
+covid_cases_newest <- covid_cases_newest %>% select(-rent_burden_not_computed)
+covid_cases_newest <- covid_cases_newest %>% select(-renter_occupied_housing_units_paying_cash_median_gross_rent)
+covid_cases_newest <- covid_cases_newest %>% select(-rent_under_10_percent)
+covid_cases_newest <- covid_cases_newest %>% select(-rent_10_to_15_percent)
+covid_cases_newest <- covid_cases_newest %>% select(-rent_15_to_20_percent)
+covid_cases_newest <- covid_cases_newest %>% select(-rent_20_to_25_percent)
+covid_cases_newest <- covid_cases_newest %>% select(-rent_25_to_30_percent)
+covid_cases_newest <- covid_cases_newest %>% select(-rent_30_to_35_percent)
+covid_cases_newest <- covid_cases_newest %>% select(-rent_35_to_40_percent)
+covid_cases_newest <- covid_cases_newest %>% select(-rent_40_to_50_percent)
+covid_cases_newest <- covid_cases_newest %>% select(-rent_over_50_percent)
+covid_cases_newest <- covid_cases_newest %>% select(-pop_divorced)
+covid_cases_newest <- covid_cases_newest %>% select(-pop_widowed)
+covid_cases_newest <- covid_cases_newest %>% select(-pop_separated)
+covid_cases_newest <- covid_cases_newest %>% select(-do_date)
+covid_cases_newest <- covid_cases_newest %>% select(-no_cars)
+covid_cases_newest <- covid_cases_newest %>% select(-pop_now_married)
+covid_cases_newest <- covid_cases_newest %>% select(-pop_never_married)
+covid_cases_newest <- covid_cases_newest %>% select(-pop_15_and_over)
+covid_cases_newest <- covid_cases_newest %>% select(-pop_16_over)
+covid_cases_newest <- covid_cases_newest %>% select(-pop_5_years_over)
+covid_cases_newest <- covid_cases_newest %>% select(-pop_25_64)
+covid_cases_newest <- covid_cases_newest %>% select(-pop_25_years_over)
+covid_cases_newest <- covid_cases_newest %>% select(-population_1_year_and_over)
+covid_cases_newest <- covid_cases_newest %>% select(-population_3_years_over)
+covid_cases_newest <- covid_cases_newest %>% select(-speak_only_english_at_home)
+covid_cases_newest <- covid_cases_newest %>% select(-speak_spanish_at_home_low_english)
+covid_cases_newest <- covid_cases_newest %>% select(-speak_spanish_at_home)
+covid_cases_newest <- covid_cases_newest %>% select(-hispanic_any_race)
+covid_cases_newest <- covid_cases_newest %>% select(-workers_16_and_over)
+covid_cases_newest <- covid_cases_newest %>% select(-walked_to_work)
+covid_cases_newest <- covid_cases_newest %>% select(-male_male_households)
+covid_cases_newest <- covid_cases_newest %>% select(-male_45_64_associates_degree)
+covid_cases_newest <- covid_cases_newest %>% select(-male_45_64_bachelors_degree)
+covid_cases_newest <- covid_cases_newest %>% select(-male_45_64_graduate_degree)
+covid_cases_newest <- covid_cases_newest %>% select(-female_female_households)
+covid_cases_newest <- covid_cases_newest %>% select(-male_45_to_64)
+covid_cases_newest <- covid_cases_newest %>% select(-mortgaged_housing_units)
+covid_cases_newest <- covid_cases_newest %>% select(-aggregate_travel_time_to_work)
+covid_cases_newest <- covid_cases_newest %>% select(-families_with_young_children)
+covid_cases_newest <- covid_cases_newest %>% select(-two_parent_families_with_young_children)
+covid_cases_newest <- covid_cases_newest %>% select(-two_parents_in_labor_force_families_with_young_children)
+covid_cases_newest <- covid_cases_newest %>% select(-two_parents_father_in_labor_force_families_with_young_children)
+covid_cases_newest <- covid_cases_newest %>% select(-two_parents_mother_in_labor_force_families_with_young_children)
+covid_cases_newest <- covid_cases_newest %>% select(-two_parents_not_in_labor_force_families_with_young_children)
+covid_cases_newest <- covid_cases_newest %>% select(-one_parent_families_with_young_children)
+covid_cases_newest <- covid_cases_newest %>% select(-father_one_parent_families_with_young_children)
+covid_cases_newest <- covid_cases_newest %>% select(-father_in_labor_force_one_parent_families_with_young_children)
+covid_cases_newest <- covid_cases_newest %>% select(-owner_occupied_housing_units_lower_value_quartile)
+covid_cases_newest <- covid_cases_newest %>% select(-owner_occupied_housing_units_median_value)
+covid_cases_newest <- covid_cases_newest %>% select(-owner_occupied_housing_units_upper_value_quartile)
+covid_cases_newest <- covid_cases_newest %>% select(-married_households)
+covid_cases_newest <- covid_cases_newest %>% select(-occupied_housing_units)
+covid_cases_newest <- covid_cases_newest %>% select(-housing_units_renter_occupied)
+covid_cases_newest <- covid_cases_newest %>% select(-dwellings_1_units_detached)
+covid_cases_newest <- covid_cases_newest %>% select(-dwellings_1_units_attached)
+covid_cases_newest <- covid_cases_newest %>% select(-dwellings_2_units)
+covid_cases_newest <- covid_cases_newest %>% select(-dwellings_3_to_4_units)
+covid_cases_newest <- covid_cases_newest %>% select(-dwellings_5_to_9_units)
+covid_cases_newest <- covid_cases_newest %>% select(-dwellings_10_to_19_units)
+covid_cases_newest <- covid_cases_newest %>% select(-dwellings_20_to_49_units)
+covid_cases_newest <- covid_cases_newest %>% select(-dwellings_50_or_more_units)
+covid_cases_newest <- covid_cases_newest %>% select(-mobile_homes)
+covid_cases_newest <- covid_cases_newest %>% select(-housing_built_2005_or_later)
+covid_cases_newest <- covid_cases_newest %>% select(-housing_built_2000_to_2004)
+covid_cases_newest <- covid_cases_newest %>% select(-housing_built_1939_or_earlier)
+covid_cases_newest <- covid_cases_newest %>% select(-white_including_hispanic)
+covid_cases_newest <- covid_cases_newest %>% select(-black_including_hispanic)
+covid_cases_newest <- covid_cases_newest %>% select(-asian_including_hispanic)
+covid_cases_newest <- covid_cases_newest %>% select(-amerindian_including_hispanic)
+covid_cases_newest <- covid_cases_newest %>% select(-commuters_by_carpool)
+covid_cases_newest <- covid_cases_newest %>% select(-households_retirement_income)
+covid_cases_newest <- covid_cases_newest %>% select(-armed_forces)
+covid_cases_newest <- covid_cases_newest %>% select(-civilian_labor_force)
+covid_cases_newest <- covid_cases_newest %>% select(-asian_male_45_54)
+covid_cases_newest <- covid_cases_newest %>% select(-asian_male_55_64)
+covid_cases_newest <- covid_cases_newest %>% select(-black_male_45_54)
+covid_cases_newest <- covid_cases_newest %>% select(-black_male_55_64)
+covid_cases_newest <- covid_cases_newest %>% select(-hispanic_male_45_54)
+covid_cases_newest <- covid_cases_newest %>% select(-hispanic_male_55_64)
+covid_cases_newest <- covid_cases_newest %>% select(-white_male_45_54)
+covid_cases_newest <- covid_cases_newest %>% select(-white_male_55_64)
+covid_cases_newest <- covid_cases_newest %>% select(-bachelors_degree_or_higher_25_64)
+covid_cases_newest <- covid_cases_newest %>% select(-children_in_single_female_hh)
+covid_cases_newest <- covid_cases_newest %>% select(-children)
+covid_cases_newest <- covid_cases_newest %>% select(-different_house_year_ago_different_city)
+covid_cases_newest <- covid_cases_newest %>% select(-different_house_year_ago_same_city)
+covid_cases_newest <- covid_cases_newest %>% select(-male_45_64_less_than_9_grade)
+covid_cases_newest <- covid_cases_newest %>% select(-male_45_64_grade_9_12)
+covid_cases_newest <- covid_cases_newest %>% select(-male_45_64_high_school)
+covid_cases_newest <- covid_cases_newest %>% select(-male_45_64_some_college)
+covid_cases_newest <- covid_cases_newest %>% select(-in_grades_1_to_4)
+covid_cases_newest <- covid_cases_newest %>% select(-in_grades_5_to_8)
+covid_cases_newest <- covid_cases_newest %>% select(-in_grades_9_to_12)
+covid_cases_newest <- covid_cases_newest %>% select(-in_school)
+covid_cases_newest <- covid_cases_newest %>% select(-group_quarters)
+covid_cases_newest <- covid_cases_newest %>% select(-management_business_sci_arts_employed)
+covid_cases_newest <- covid_cases_newest %>% select(-bachelors_degree_2)
+covid_cases_newest <- covid_cases_newest %>% select(-occupation_management_arts)
+covid_cases_newest <- covid_cases_newest %>% select(-occupation_natural_resources_construction_maintenance)
+covid_cases_newest <- covid_cases_newest %>% select(-occupation_production_transportation_material)
+covid_cases_newest <- covid_cases_newest %>% select(-occupation_sales_office)
+covid_cases_newest <- covid_cases_newest %>% select(-occupation_services)
+covid_cases_newest <- covid_cases_newest %>% select(-sales_office_employed)
+covid_cases_newest <- covid_cases_newest %>% select(-one_year_more_college)
+covid_cases_newest <- covid_cases_newest %>% select(-in_undergrad_college)
+covid_cases_newest <- covid_cases_newest %>% select(-less_one_year_college)
+covid_cases_newest <- covid_cases_newest %>% select(-some_college_and_associates_degree)
+covid_cases_newest <- covid_cases_newest %>% select(-`Confirmed`)
+covid_cases_newest <- covid_cases_newest %>% select(-`Deaths`)
+covid_cases_newest <- covid_cases_newest %>% select(-`Population`)
+covid_cases_newest <- covid_cases_newest %>% select(-`Income Per Capita`)
+covid_cases_newest <- covid_cases_newest %>% select(-`Households Using Public Assistance or Food Stamps`)
+covid_cases_newest <- covid_cases_newest %>% select(-`Median Rent`)
+
 ###### More Cleaning ######
 summary(covid_cases_newest)
 table(complete.cases(covid_cases_newest))
@@ -441,6 +452,87 @@ hmap(cm, margins = c(10, 10))
 dev.off()
 
 ###### Creating Qualifier Class Variables ######
+###### Creating a "bad" factor which represents high death:case rate ######
+covid_cases_newest <- covid_cases_newest %>% mutate(bad_death_case_count = as.factor(death_per_case > 142))
+## Determine a more-or-less even split to avoid class imbalance
+covid_cases_newest %>% pull(bad_death_case_count) %>% table()
+## We determine further States with interesting percentages of "bad" ##
+covid_cases_newest_US_bad_death_cases <- covid_cases_newest %>% group_by(State) %>% 
+  summarize(bad_predicted_death_case_count_pct = sum(bad_death_case_count == TRUE)/n()) %>%
+  arrange(desc(bad_predicted_death_case_count_pct))
+###### Split our data into test/training sets: Death:Case Rate ######
+## Training Set ##
+covid_cases_newest %>% filter(State %in% c("TX", "CA", "FL", "NY"))
+covid_cases_newest_training <- covid_cases_newest %>% filter(State %in% c("TX", "CA", "FL", "NY"))
+covid_cases_newest_training %>% pull(bad_death_case_count) %>% table()
+## Test Set ##
+covid_cases_newest_test <- covid_cases_newest %>% filter(!(State %in% c("TX", "CA", "FL", "NY")))
+covid_cases_newest_test %>% pull(bad_death_case_count) %>% table()
+###### Plot map for training data ######
+counties <- as_tibble(map_data("county"))
+counties <- counties %>% 
+  rename(c(county = subregion, state = region)) %>%
+  mutate(state = state.abb[match(state, tolower(state.name))]) %>%
+  select(state, county, long, lat, group)
+counties  
+
+counties_all <- counties %>% left_join(covid_cases_newest_training %>% 
+                                         mutate(county = County %>% str_to_lower() %>% 
+                                                  str_replace('\\s+county\\s*$', '')))
+## Not sure why this differs from starter code ##
+ggplot(counties_all, aes(long, lat)) + 
+  geom_polygon(aes(group = group, fill = bad_death_case_count), color = "black", size = 0.1) + 
+  coord_quickmap() + scale_fill_manual(values = c('TRUE' = 'red', 'FALSE' = 'grey'))
+###### Checking variable importance: Bad Death:Case Rate ######
+covid_cases_newest_training %>%  chi.squared(bad_death_case_count ~ ., data = .) %>% 
+  arrange(desc(attr_importance)) %>% head()
+## Need to remove variable used to create class variable 
+## also remove other variables
+covid_cases_newest_training <- covid_cases_newest_training %>% select(-c(deaths_per_10000))
+covid_cases_newest_training <- covid_cases_newest_training %>% select(-c(`Geographic ID`))
+covid_cases_newest_training <- covid_cases_newest_training %>% select(-death_per_case, -cases_per_10000)
+
+covid_cases_newest_training %>%  chi.squared(bad_death_case_count ~ ., data = .) %>% 
+  arrange(desc(attr_importance)) %>% head(10)
+###### Building a model: Bad Death:Case Rate ######
+## Using Random Forest Method ##
+bad_death_case_fit <- covid_cases_newest_training %>%
+  train(bad_death_case_count ~ . - County - State,
+        data = .,
+        #method = "rpart",
+        method = "rf",
+        #method = "svmLinear"
+        #method = "nb",
+        tuneLength = 5,
+        trControl = trainControl(method = "cv", number = 15)
+      )
+bad_death_case_fit
+## Show the most important vars ##
+### NOTE: Will need to go back and get data in terms of per day ###
+varImp(bad_death_case_fit)
+varImp(bad_death_case_fit, compete = FALSE)
+bad_death_case_fit$finalModel
+###### Apply model to other states in US: Bad Death:Case Rate ######
+covid_cases_newest_test <- covid_cases_newest_test %>% na.omit
+covid_cases_newest_test$bad_predicted_death_case_count_pct <- predict(bad_death_case_fit, covid_cases_newest_test)
+
+counties_test <- counties %>% left_join(covid_cases_newest_test %>% 
+                                          mutate(county = County %>% str_to_lower() %>% 
+                                                   str_replace('\\s+county\\s*$', '')))
+## Ground Truth ##
+ggplot(counties_test, aes(long, lat)) + 
+  geom_polygon(aes(group = group, fill = bad_death_case_count), color = "black", size = 0.1) + 
+  coord_quickmap() + 
+  scale_fill_manual(values = c('TRUE' = 'red', 'FALSE' = 'grey'))
+## Predictions by plotting with our test data ##
+ggplot(counties_test, aes(long, lat)) + 
+  geom_polygon(aes(group = group, fill = bad_predicted_death_case_count_pct), color = "black", size = 0.1) + 
+  coord_quickmap() + 
+  scale_fill_manual(values = c('TRUE' = 'red', 'FALSE' = 'grey'))
+## Confusion Matrix ##
+confusionMatrix(data = covid_cases_newest_test$bad_predicted_death_case_count_pct, 
+                ref = covid_cases_newest_test$bad_death_case_count)
+###### ######
 ###### Creating a "bad" factor which represents high case rate ######
 covid_cases_newest <- covid_cases_newest %>% mutate(bad_case_count = as.factor(cases_per_10000 > 2400))
 ## Determine a more-or-less even split to avoid class imbalance
@@ -518,6 +610,7 @@ ggplot(counties_test, aes(long, lat)) +
   scale_fill_manual(values = c('TRUE' = 'red', 'FALSE' = 'grey'))
 ## Confusion Matrix ##
 confusionMatrix(data = covid_cases_newest_test$bad_predicted_case_count_pct, ref = covid_cases_newest_test$bad_case_count)
+###### ######
 ###### Creating a "bad" factor which represents high fatality rate #####
 ## Note: The "bad" value was chosen through trial and error
 ### Note: 35 is a pretty large value considering our column - keep in mind
@@ -601,3 +694,10 @@ ggplot(counties_test, aes(long, lat)) +
   scale_fill_manual(values = c('TRUE' = 'red', 'FALSE' = 'grey'))
 ## Confusion Matrix ##
 confusionMatrix(data = covid_cases_newest_test$bad_predicted_death_count, ref = covid_cases_newest_test$bad)
+
+
+
+
+
+###### Model Evaluation ######
+###### Model Comparison ######
