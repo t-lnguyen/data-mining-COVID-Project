@@ -450,8 +450,8 @@ cm <- cor(covid_cases_newest %>% select_if(is.numeric) %>% na.omit)
 hmap(cm, margins = c(10, 10))
 ## In case there is an error regarding graphics##
 dev.off()
-
-###### Creating Qualifier Class Variables ######
+###### ######
+###### Start: Using Random Forest Method ######
 ###### Creating a "bad" factor which represents high death:case rate ######
 covid_cases_newest <- covid_cases_newest %>% mutate(bad_death_case_count = as.factor(death_per_case > 142))
 ## Determine a more-or-less even split to avoid class imbalance
@@ -491,6 +491,10 @@ covid_cases_newest_training %>%  chi.squared(bad_death_case_count ~ ., data = .)
 covid_cases_newest_training <- covid_cases_newest_training %>% select(-c(deaths_per_10000))
 covid_cases_newest_training <- covid_cases_newest_training %>% select(-c(`Geographic ID`))
 covid_cases_newest_training <- covid_cases_newest_training %>% select(-death_per_case, -cases_per_10000)
+covid_cases_newest_training <- covid_cases_newest_training %>% select(-c(`Has Graduated Higher Education`))
+covid_cases_newest_training <- covid_cases_newest_training %>% select(-c(`Asian`))
+covid_cases_newest_training <- covid_cases_newest_training %>% select(-c(`Median Income`))
+covid_cases_newest_training <- covid_cases_newest_training %>% select(-c(`Percent Income Spent on Rent`))
 
 covid_cases_newest_training %>%  chi.squared(bad_death_case_count ~ ., data = .) %>% 
   arrange(desc(attr_importance)) %>% head(10)
@@ -583,8 +587,9 @@ bad_case_fit <- covid_cases_newest_training %>%
         data = . ,
         #method = "rpart",
         method = "rf",
-        #method = "nb",
-        trControl = trainControl(method = "cv", number = 10)
+        #method = "nb",        
+        tuneLength = 5,
+        trControl = trainControl(method = "cv", number = 15)
   )
 bad_case_fit
 
@@ -684,7 +689,7 @@ counties_test <- counties %>% left_join(covid_cases_newest_test %>%
                                                    str_replace('\\s+county\\s*$', '')))
 ## Ground Truth ##
 ggplot(counties_test, aes(long, lat)) + 
-  geom_polygon(aes(group = group, fill = bad), color = "black", size = 0.1) + 
+  geom_polygon(aes(group = group, fill = bad_predicted_death_count), color = "black", size = 0.1) + 
   coord_quickmap() + 
   scale_fill_manual(values = c('TRUE' = 'red', 'FALSE' = 'grey'))
 ## Predictions by plotting with our test data ##
@@ -698,6 +703,217 @@ confusionMatrix(data = covid_cases_newest_test$bad_predicted_death_count, ref = 
 
 
 
+###### End: Using Random Forest Method ######
+###### Start: Using Rpart Method ######
+##Bad: Fatality Rate
+##Training
+colnames(covid_cases_newest_training) <- make.names(colnames(covid_cases_newest_training))
+rpart_fit_fatality_rate <- covid_cases_newest_training %>%
+  train(bad_death_count ~ . - County - State,
+        data = . ,
+        method = "rpart",
+        trControl = trainControl(method = "cv", number = 10),
+        tuneGrid=data.frame(cp=0.01)
+  )
+rpart_fit_fatality_rate
 
+#Show the most important vars
+varImp(rpart_fit_fatality_rate)
+
+##Testing
+covid_cases_newest_test <- covid_cases_newest_test %>% na.omit
+covid_cases_newest_test$bad_predicted_death_count <- predict(fit, covid_cases_newest_test)
+
+counties_test_rpart_fatality_rate <- counties %>% left_join(covid_cases_newest_test %>% 
+                                                              mutate(county = County %>% str_to_lower() %>% 
+                                                                       str_replace('\\s+county\\s*$', '')))
+#Ground Truth
+ggplot(counties_test_rpart_fatality_rate, aes(long, lat)) + 
+  geom_polygon(aes(group = group, fill = bad_death_count), color = "black", size = 0.1) + 
+  coord_quickmap() + 
+  scale_fill_manual(values = c('TRUE' = 'red', 'FALSE' = 'grey'))
+#Predictions by plotting with our test data
+ggplot(counties_test_rpart_fatality_rate, aes(long, lat)) + 
+  geom_polygon(aes(group = group, fill = bad_predicted_death_count), color = "black", size = 0.1) + 
+  coord_quickmap() + 
+  scale_fill_manual(values = c('TRUE' = 'red', 'FALSE' = 'grey'))
+#Confusion Matrix
+confusionMatrix(data = covid_cases_newest_test$bad_predicted_death_count, ref = covid_cases_newest_test$bad_death_count)
+
+
+##Bad: Case Count
+##Training
+colnames(covid_cases_newest_training) <- make.names(colnames(covid_cases_newest_training))
+rpart_fit_case_count <- covid_cases_newest_training %>%
+  train(bad_case_count ~ . - County - State,
+        data = . ,
+        method = "rpart",
+        trControl = trainControl(method = "cv", number = 10),
+        tuneGrid=data.frame(cp=0.01)
+  )
+rpart_fit_case_count
+
+#Show the most important vars
+varImp(rpart_fit_case_count)
+
+##Testing
+covid_cases_newest_test <- covid_cases_newest_test %>% na.omit
+covid_cases_newest_test$bad_predicted_case_count_pct <- predict(fit, covid_cases_newest_test)
+
+counties_test_rpart_case_count <- counties %>% left_join(covid_cases_newest_test %>% 
+                                                           mutate(county = County %>% str_to_lower() %>% 
+                                                                    str_replace('\\s+county\\s*$', '')))
+#Ground Truth
+ggplot(counties_test_rpart_case_count, aes(long, lat)) + 
+  geom_polygon(aes(group = group, fill = bad_case_count), color = "black", size = 0.1) + 
+  coord_quickmap() + 
+  scale_fill_manual(values = c('TRUE' = 'red', 'FALSE' = 'grey'))
+#Predictions by plotting with our test data
+ggplot(counties_test_rpart_case_count, aes(long, lat)) + 
+  geom_polygon(aes(group = group, fill = bad_predicted_case_count_pct), color = "black", size = 0.1) + 
+  coord_quickmap() + 
+  scale_fill_manual(values = c('TRUE' = 'red', 'FALSE' = 'grey'))
+#Confusion Matrix
+confusionMatrix(data = covid_cases_newest_test$bad_predicted_case_count_pct, ref = covid_cases_newest_test$bad_case_count)
+
+
+##Bad: Death Case Rate
+##Training
+colnames(covid_cases_newest_training) <- make.names(colnames(covid_cases_newest_training))
+rpart_fit_death_case_rate <- covid_cases_newest_training %>%
+  train(bad_death_case_count ~ . - County - State,
+        data = . ,
+        method = "rpart",
+        trControl = trainControl(method = "cv", number = 10),
+        tuneGrid=data.frame(cp=0.01)
+  )
+rpart_fit_death_case_rate
+
+#Show the most important vars
+varImp(rpart_fit_death_case_rate)
+
+##Testing
+covid_cases_newest_test <- covid_cases_newest_test %>% na.omit
+covid_cases_newest_test$bad_predicted_case_count_pct <- predict(fit, covid_cases_newest_test)
+
+counties_test_rpart_death_case_rate <- counties %>% left_join(covid_cases_newest_test %>% 
+                                                                mutate(county = County %>% str_to_lower() %>% 
+                                                                         str_replace('\\s+county\\s*$', '')))
+#Ground Truth
+ggplot(counties_test_rpart_death_case_rate, aes(long, lat)) + 
+  geom_polygon(aes(group = group, fill = bad_death_case_count), color = "black", size = 0.1) + 
+  coord_quickmap() + 
+  scale_fill_manual(values = c('TRUE' = 'red', 'FALSE' = 'grey'))
+#Predictions by plotting with our test data
+ggplot(counties_test_rpart_death_case_rate, aes(long, lat)) + 
+  geom_polygon(aes(group = group, fill = bad_predicted_case_count_pct), color = "black", size = 0.1) + 
+  coord_quickmap() + 
+  scale_fill_manual(values = c('TRUE' = 'red', 'FALSE' = 'grey'))
+#Confusion Matrix
+confusionMatrix(data = covid_cases_newest_test$bad_predicted_case_count_pct, ref = covid_cases_newest_test$bad_death_case_count)
+
+###### End: Using Rpart Method ######
+###### Start: Using Naive Bayes ######
+## Using NB Method ##
+##Bad: Fatality Rate
+##Training
+colnames(covid_cases_newest_training) <- make.names(colnames(covid_cases_newest_training))
+nb_fit_fatality_rate <- covid_cases_newest_training %>%
+  train(bad_case_count ~ . - County - State,
+        data = . ,
+        method = "nb",
+        trControl = trainControl(method = "cv", number = 10),
+        tuneGrid=data.frame(.fL=c(0), .usekernel=c(FALSE),.adjust=0.5)
+  )
+nb_fit_fatality_rate
+
+
+##Testing
+covid_cases_newest_test <- covid_cases_newest_test %>% na.omit
+covid_cases_newest_test$bad_predicted_death_count <- predict(fit, covid_cases_newest_test)
+
+counties_test_nb_fatality_rate <- counties %>% left_join(covid_cases_newest_test %>% 
+                                                           mutate(county = County %>% str_to_lower() %>% 
+                                                                    str_replace('\\s+county\\s*$', '')))
+#Ground Truth
+ggplot(counties_test_nb_fatality_rate, aes(long, lat)) + 
+  geom_polygon(aes(group = group, fill = bad_death_count), color = "black", size = 0.1) + 
+  coord_quickmap() + 
+  scale_fill_manual(values = c('TRUE' = 'red', 'FALSE' = 'grey'))
+#Predictions by plotting with our test data
+ggplot(counties_test_nb_fatality_rate, aes(long, lat)) + 
+  geom_polygon(aes(group = group, fill = bad_predicted_death_count), color = "black", size = 0.1) + 
+  coord_quickmap() + 
+  scale_fill_manual(values = c('TRUE' = 'red', 'FALSE' = 'grey'))
+#Confusion Matrix
+confusionMatrix(data = covid_cases_newest_test$bad_predicted_death_count, ref = covid_cases_newest_test$bad_death_count)
+
+
+##Bad: Case Count
+##Training
+colnames(covid_cases_newest_training) <- make.names(colnames(covid_cases_newest_training))
+nb_fit_case_count <- covid_cases_newest_training %>%
+  train(bad_case_count ~ . - County - State,
+        data = . ,
+        method = "nb",
+        trControl = trainControl(method = "cv", number = 10),
+        tuneGrid=data.frame(.fL=c(0), .usekernel=c(FALSE),.adjust=0.5)
+  )
+nb_fit_case_count
+
+##Testing
+covid_cases_newest_test <- covid_cases_newest_test %>% na.omit
+covid_cases_newest_test$bad_predicted_case_count_pct <- predict(fit, covid_cases_newest_test)
+
+counties_test_nb_case_count <- counties %>% left_join(covid_cases_newest_test %>% 
+                                                        mutate(county = County %>% str_to_lower() %>% 
+                                                                 str_replace('\\s+county\\s*$', '')))
+#Ground Truth
+ggplot(counties_test_nb_case_count, aes(long, lat)) + 
+  geom_polygon(aes(group = group, fill = bad_case_count), color = "black", size = 0.1) + 
+  coord_quickmap() + 
+  scale_fill_manual(values = c('TRUE' = 'red', 'FALSE' = 'grey'))
+#Predictions by plotting with our test data
+ggplot(counties_test_nb_case_count, aes(long, lat)) + 
+  geom_polygon(aes(group = group, fill = bad_predicted_case_count_pct), color = "black", size = 0.1) + 
+  coord_quickmap() + 
+  scale_fill_manual(values = c('TRUE' = 'red', 'FALSE' = 'grey'))
+#Confusion Matrix
+confusionMatrix(data = covid_cases_newest_test$bad_predicted_case_count_pct, ref = covid_cases_newest_test$bad_case_count)
+
+
+##Bad: Death Case Rate
+##Training
+colnames(covid_cases_newest_training) <- make.names(colnames(covid_cases_newest_training))
+nb_fit_death_case_rate <- covid_cases_newest_training %>%
+  train(bad_case_count ~ . - County - State,
+        data = . ,
+        method = "nb",
+        trControl = trainControl(method = "cv", number = 10),
+        tuneGrid=data.frame(.fL=c(0), .usekernel=c(FALSE),.adjust=0.5)
+  )
+nb_fit_death_case_rate
+
+##Testing
+covid_cases_newest_test <- covid_cases_newest_test %>% na.omit
+covid_cases_newest_test$bad_predicted_case_count_pct <- predict(fit, covid_cases_newest_test)
+
+counties_test_nb_death_case_rate <- counties %>% left_join(covid_cases_newest_test %>% 
+                                                             mutate(county = County %>% str_to_lower() %>% 
+                                                                      str_replace('\\s+county\\s*$', '')))
+#Ground Truth
+ggplot(counties_test_nb_death_case_rate, aes(long, lat)) + 
+  geom_polygon(aes(group = group, fill = bad_death_case_count), color = "black", size = 0.1) + 
+  coord_quickmap() + 
+  scale_fill_manual(values = c('TRUE' = 'red', 'FALSE' = 'grey'))
+#Predictions by plotting with our test data
+ggplot(counties_test_nb_death_case_rate, aes(long, lat)) + 
+  geom_polygon(aes(group = group, fill = bad_predicted_case_count_pct), color = "black", size = 0.1) + 
+  coord_quickmap() + 
+  scale_fill_manual(values = c('TRUE' = 'red', 'FALSE' = 'grey'))
+#Confusion Matrix
+confusionMatrix(data = covid_cases_newest_test$bad_predicted_case_count_pct, ref = covid_cases_newest_test$bad_death_case_count)
+
+###### End: Using Naive Bayes ######
 ###### Model Evaluation ######
 ###### Model Comparison ######
