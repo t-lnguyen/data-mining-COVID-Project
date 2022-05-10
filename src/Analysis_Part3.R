@@ -8,6 +8,12 @@ library(ggplot2)
 library(seriation)
 library(FSelector)
 library(caret)
+library(lattice)
+library(neuralnet)
+library("e1071")
+library(ggvis)
+library(class)
+library(nnet)
 
 ###### Data tibbles ######
 covid_cases_newest <- as_tibble(read_csv("~/Documents/Development/GradSchool/data-mining-COVID-Project/data/covid_census_newest.csv"))
@@ -662,11 +668,16 @@ covid_cases_newest_training %>%  chi.squared(bad_death_count ~ ., data = .) %>%
 covid_cases_newest_training <- covid_cases_newest_training %>% select(-c(deaths_per_10000))
 covid_cases_newest_training <- covid_cases_newest_training %>% select(-c(`Geographic ID`))
 covid_cases_newest_training <- covid_cases_newest_training %>% select(-death_per_case, -cases_per_10000)
+covid_cases_newest_training <- covid_cases_newest_training %>% select(-c(`bad_death_case_count`))
+covid_cases_newest_training <- covid_cases_newest_training %>% select(-c(`Median Income`))
+covid_cases_newest_training <- covid_cases_newest_training %>% select(-c(`Median Age`))
+covid_cases_newest_training <- covid_cases_newest_training %>% select(-c(`Percent Income Spent on Rent`))
+
 covid_cases_newest_training %>%  chi.squared(bad_death_count ~ ., data = .) %>% 
   arrange(desc(attr_importance)) %>% head(10)
 ###### Building a model: Bad Fatality Rate ######
 ## Using Random Forest Method ##
-fit <- covid_cases_newest_training %>%
+bad_death_fit <- covid_cases_newest_training %>%
   train(bad_death_count ~ . - County - State,
         data = . ,
         #method = "rpart",
@@ -674,22 +685,22 @@ fit <- covid_cases_newest_training %>%
         #method = "nb",
         trControl = trainControl(method = "cv", number = 10)
   )
-fit
+bad_death_fit
 ## Show the most important vars ##
 ### NOTE: Will need to go back and get data in terms of per day ###
-varImp(fit)
+varImp(bad_death_fit)
 
 
 ###### Apply model to other states in US: Bad Fatality Rate ######
 covid_cases_newest_test <- covid_cases_newest_test %>% na.omit
-covid_cases_newest_test$bad_predicted_death_count <- predict(fit, covid_cases_newest_test)
+covid_cases_newest_test$bad_predicted_death_count <- predict(bad_death_fit, covid_cases_newest_test)
 
 counties_test <- counties %>% left_join(covid_cases_newest_test %>% 
                                           mutate(county = County %>% str_to_lower() %>% 
                                                    str_replace('\\s+county\\s*$', '')))
 ## Ground Truth ##
 ggplot(counties_test, aes(long, lat)) + 
-  geom_polygon(aes(group = group, fill = bad_predicted_death_count), color = "black", size = 0.1) + 
+  geom_polygon(aes(group = group, fill = bad_death_count), color = "black", size = 0.1) + 
   coord_quickmap() + 
   scale_fill_manual(values = c('TRUE' = 'red', 'FALSE' = 'grey'))
 ## Predictions by plotting with our test data ##
@@ -698,11 +709,12 @@ ggplot(counties_test, aes(long, lat)) +
   coord_quickmap() + 
   scale_fill_manual(values = c('TRUE' = 'red', 'FALSE' = 'grey'))
 ## Confusion Matrix ##
-confusionMatrix(data = covid_cases_newest_test$bad_predicted_death_count, ref = covid_cases_newest_test$bad)
+confusionMatrix(data = covid_cases_newest_test$bad_predicted_death_count, ref = covid_cases_newest_test$bad_death_count)
 
 
 
 
+###### ######
 ###### End: Using Random Forest Method ######
 ###### Start: Using Rpart Method ######
 ##Bad: Fatality Rate
@@ -758,7 +770,7 @@ varImp(rpart_fit_case_count)
 
 ##Testing
 covid_cases_newest_test <- covid_cases_newest_test %>% na.omit
-covid_cases_newest_test$bad_predicted_case_count_pct <- predict(fit, covid_cases_newest_test)
+covid_cases_newest_test$bad_predicted_case_count_pct <- predict(rpart_fit_case_count, covid_cases_newest_test)
 
 counties_test_rpart_case_count <- counties %>% left_join(covid_cases_newest_test %>% 
                                                            mutate(county = County %>% str_to_lower() %>% 
@@ -915,5 +927,53 @@ ggplot(counties_test_nb_death_case_rate, aes(long, lat)) +
 confusionMatrix(data = covid_cases_newest_test$bad_predicted_case_count_pct, ref = covid_cases_newest_test$bad_death_case_count)
 
 ###### End: Using Naive Bayes ######
-###### Model Evaluation ######
+###### Start: Using Artificial Neural Nets ######
+
+new <- as_tibble(read_csv("new.csv"))
+head(new)
+newdf <- cbind(new[,3:5], class.ind(new$State))
+head(newdf)
+
+set.seed(2)
+proportion <- 0.80 #set to split
+index <- sample(1:nrow(newdf), round(proportion*nrow(newdf)))
+train_new <- newdf[index,]
+test_new <- newdf[-index,] 
+
+NROW(train_new)
+NROW(test_new)
+
+new_n <- neuralnet(CA + FL + NY + TX ~ cases_per_10000 
+                   + deaths_per_10000 + death_per_case, train_new, hidden =  c(4))
+
+plot(new_n)
+head(test_new)
+pred_test <- compute(new_n, test_new[,1:5])
+
+predtestResult <- pred_test$net.result
+predtestResult <- as.data.frame(predtestResult)
+
+colnames(predtestResult) <- c("CA", "FL", "NY", "TX")
+head(predtestResult)
+
+result_new <- colnames(predtestResult)[apply(predtestResult, 1, which.max)]
+result_new <- as.data.frame(result_new)
+result_new
+
+new_testdataset <-colnames(test_new[,4:7])[apply(test_new[,4:7],1, which.max)]
+new_testdataset <- as.data.frame(new_testdataset)
+table(result_new$result_new, new_testdataset$new_testdataset)
+###### End: Using Artificial Neural Nets ######
 ###### Model Comparison ######
+## We're looking at the top performers in terms of accuracy only
+resamps <- resamples(list(
+  CART = rpart_fit_fatality_rate,
+  RandomForest = bad_death_fit
+))
+
+summary(resamps)
+
+bwplot(resamps, layout = c(3, 1))
+difs <- diff(resamps)
+difs
+summary(difs)
